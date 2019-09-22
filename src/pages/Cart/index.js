@@ -1,12 +1,43 @@
+/* eslint-disable jsx-a11y/control-has-associated-label */
 import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import {
   MdRemoveCircleOutline,
   MdAddCircleOutline,
   MdDelete,
 } from 'react-icons/md';
 import { Container, ProductTable, Total } from './styles';
+import { formatPrice } from '../../util/format';
+
+import {
+  removeFromCart,
+  updateAmountRequest,
+} from '../../store/modules/cart/actions';
 
 export default function Cart() {
+  const dispatch = useDispatch();
+  const cart = useSelector(state =>
+    state.cart.map(product => ({
+      ...product,
+      subtotal: formatPrice(product.price * product.amount),
+    }))
+  );
+  const totalCart = formatPrice(
+    useSelector(state =>
+      state.cart.reduce((total, product) => {
+        return total + product.price * product.amount;
+      }, 0)
+    )
+  );
+
+  function increment(product) {
+    dispatch(updateAmountRequest(product.id, product.amount + 1));
+  }
+
+  function decrement(product) {
+    dispatch(updateAmountRequest(product.id, product.amount - 1));
+  }
+
   return (
     <Container>
       <ProductTable>
@@ -20,37 +51,47 @@ export default function Cart() {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>
-              <img
-                src="https://static.netshoes.com.br/produtos/tenis-mizuno-wave-mirai-2-masculino/87/D16-2953-187/D16-2953-187_detalhe1.jpg"
-                alt=""
-              />
-            </td>
-            <td>
-              <strong>Tênis Naice</strong>
-              <span>R$33,33</span>
-            </td>
-            <td>
-              <div>
-                <button type="button">
-                  <MdRemoveCircleOutline size={20} color="#7159c1" />
+          {cart.map(product => (
+            <tr key={product.id}>
+              <td>
+                <img src={product.image} alt={product.title} />
+              </td>
+              <td>
+                <strong>{product.title}</strong>
+                <span>{product.priceFormatted}</span>
+              </td>
+              <td>
+                <div>
+                  <button type="button">
+                    <MdRemoveCircleOutline
+                      size={20}
+                      color="#7159c1"
+                      onClick={() => decrement(product)}
+                    />
+                  </button>
+                  <input type="number" readOnly value={product.amount} />
+                  <button type="button">
+                    <MdAddCircleOutline
+                      size={20}
+                      color="#7159c1"
+                      onClick={() => increment(product)}
+                    />
+                  </button>
+                </div>
+              </td>
+              <td>
+                <strong>{product.subtotal}</strong>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() => dispatch(removeFromCart(product.id))}
+                >
+                  <MdDelete size={20} color="#7159c1" />
                 </button>
-                <input type="number" readOnly value={1} />
-                <button type="button">
-                  <MdAddCircleOutline size={20} color="#7159c1" />
-                </button>
-              </div>
-            </td>
-            <td>
-              <strong>R$66,66</strong>
-            </td>
-            <td>
-              <button type="button">
-                <MdDelete size={20} color="#7159c1" />
-              </button>
-            </td>
-          </tr>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </ProductTable>
       <footer>
@@ -58,7 +99,7 @@ export default function Cart() {
 
         <Total>
           <span>TOTAL</span>
-          <strong>R$1655,65</strong>
+          <strong>{totalCart}</strong>
         </Total>
       </footer>
     </Container>
